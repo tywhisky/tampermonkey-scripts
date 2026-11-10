@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comic Viewport Fit
 // @namespace    comic-viewport-fit
-// @version      0.2.0
+// @version      0.3.0
 // @description  Fit comic images to the browser viewport while preserving their aspect ratio. Enable it per site.
 // @match        *://*/*
 // @run-at       document-end
@@ -26,29 +26,41 @@
   const selector = customSelector ?? (mangaBox ? '#mangaBox img#mangaFile' : 'img');
   const heightProperty = '--comic-viewport-fit-height';
   let resizeFrame = 0;
+  let centeredScrollY = 0;
   let style = null;
 
-  function fitMangaBox(reveal = false) {
+  function centerMangaBox() {
     const viewportHeight = document.documentElement.clientHeight;
-    let top = mangaBox.getBoundingClientRect().top;
-    // Bring the comic into view if it is clipped or the header takes most of the window.
-    if ((reveal && top < 0) || top > viewportHeight / 2) {
-      mangaBox.scrollIntoView({ block: 'start', behavior: 'instant' });
-      top = mangaBox.getBoundingClientRect().top;
-    }
-    const height = Math.max(1, Math.floor(viewportHeight - Math.max(0, top)));
-    mangaBox.style.setProperty(heightProperty, `${height}px`);
+    mangaBox.style.setProperty(heightProperty, `${viewportHeight}px`);
+    mangaBox.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+    centeredScrollY = window.scrollY;
   }
 
-  function scheduleFit() {
+  function scheduleCenter() {
     cancelAnimationFrame(resizeFrame);
-    resizeFrame = requestAnimationFrame(() => fitMangaBox());
+    resizeFrame = requestAnimationFrame(centerMangaBox);
   }
 
-  const layoutObserver = mangaBox ? new ResizeObserver(scheduleFit) : null;
+  function centerOnImageLoad(event) {
+    if (event.target.id === 'mangaFile') scheduleCenter();
+  }
+
+  const layoutObserver = mangaBox ? new ResizeObserver(() => {
+    // Follow late layout shifts while the reader is still at its automatic position.
+    if (Math.abs(window.scrollY - centeredScrollY) <= 1) scheduleCenter();
+  }) : null;
 
   function applyImageStyles() {
     style = GM_addStyle(`
+      ${mangaBox ? `
+        #mangaBox {
+          box-sizing: border-box !important;
+          display: grid !important;
+          height: var(${heightProperty}, 100vh) !important;
+          place-items: center !important;
+          overflow-anchor: none;
+        }
+      ` : ''}
       ${selector} {
         max-height: 100vh !important;
         max-height: 100dvh !important;
@@ -65,9 +77,11 @@
       }
     `);
     if (mangaBox) {
-      fitMangaBox(true);
+      centerMangaBox();
       layoutObserver.observe(document.body);
-      window.addEventListener('resize', scheduleFit);
+      mangaBox.addEventListener('load', centerOnImageLoad, true);
+      window.addEventListener('pageshow', scheduleCenter);
+      window.addEventListener('resize', scheduleCenter);
     }
   }
 
@@ -95,7 +109,9 @@
       style = null;
       if (mangaBox) {
         layoutObserver.disconnect();
-        window.removeEventListener('resize', scheduleFit);
+        mangaBox.removeEventListener('load', centerOnImageLoad, true);
+        window.removeEventListener('pageshow', scheduleCenter);
+        window.removeEventListener('resize', scheduleCenter);
         cancelAnimationFrame(resizeFrame);
         mangaBox.style.removeProperty(heightProperty);
       }
@@ -106,7 +122,7 @@
     updateButton();
   }
 
-  if (GM_getValue(enabledKey, false)) applyImageStyles();
+  if (GM_getValue(enabledKey, Boolean(mangaBox || customSelector))) applyImageStyles();
   updateButton();
   button.addEventListener('click', toggleFit);
   GM_registerMenuCommand('Toggle Comic Viewport Fit for This Site', toggleFit);
