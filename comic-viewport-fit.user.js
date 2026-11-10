@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         漫画图片适屏 · Comic Viewport Fit
+// @name         Comic Viewport Fit
 // @namespace    comic-viewport-fit
 // @version      0.1.0
-// @description  将漫画图片等比缩放到浏览器可视区域的高度以内，按站点开启。
+// @description  Fit comic images to the browser viewport height while preserving their aspect ratio. Enable it per site.
 // @match        *://*/*
 // @run-at       document-end
 // @noframes
@@ -20,7 +20,7 @@
   ]);
   const hostname = location.hostname;
   const enabledKey = `enabled:${hostname}`;
-  // shortcut: 通用规则匹配本站所有 img。有专用阅读区时可为该域名指定选择器。
+  // shortcut: The default selector matches every image. Add a site-specific selector to target the comic reader.
   const selector = siteSelectors.get(hostname) ?? 'img';
 
   function applyImageStyles() {
@@ -35,7 +35,7 @@
 
   let style = GM_getValue(enabledKey, false) ? applyImageStyles() : null;
 
-  GM_registerMenuCommand('切换本站漫画图片适屏', () => {
+  GM_registerMenuCommand('Toggle Comic Viewport Fit for This Site', () => {
     if (style) {
       style.remove();
       style = null;

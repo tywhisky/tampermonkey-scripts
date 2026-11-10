@@ -1,19 +1,19 @@
-# Userscripts · 自用油猴脚本
+# Tampermonkey Scripts
 
-这里收录我日常使用的 Tampermonkey 脚本。
+A collection of Tampermonkey scripts I use regularly.
 
-## 脚本列表
+## Scripts
 
-### [漫画图片适屏 · Comic Viewport Fit](./comic-viewport-fit.user.js)
+### [Comic Viewport Fit](./comic-viewport-fit.user.js)
 
-将漫画图片的高度限制在浏览器当前可视区域内，保持原图比例。窗口大小变化或网站继续加载图片时，规则会自动生效。
+Keeps comic images within the browser viewport height while preserving their aspect ratio. The sizing adjusts when the window is resized and also applies to images loaded later.
 
-#### 安装和使用
+#### Installation and use
 
-1. 在 Tampermonkey 中新建脚本，粘贴 `comic-viewport-fit.user.js` 的全部内容并保存。
-2. 打开漫画阅读页，点击 Tampermonkey 图标，选择「切换本站漫画图片适屏」。
-3. 脚本会记住该域名的设置。再次点击同一菜单项可关闭。
+1. Create a new script in Tampermonkey, paste the contents of `comic-viewport-fit.user.js`, and save it.
+2. Open a comic reading page, click the Tampermonkey icon, and select **Toggle Comic Viewport Fit for This Site**.
+3. The script remembers the setting for that hostname. Select the same menu command again to turn it off.
 
-#### 适配站点
+#### Site settings
 
-脚本默认关闭。开启后，通用规则匹配该域名下页面中的所有 `<img>`。如果只想调整漫画正文，可在脚本开头的 `siteSelectors` 中添加域名及阅读区图片的 CSS 选择器，例如 `['manga.example.com', '.reader img']`。
+The script is off by default. When enabled, it applies to every `<img>` element on pages with that hostname. To limit it to images in the comic reader, add the hostname and a CSS selector to `siteSelectors` near the top of the script. For example, use `['manga.example.com', '.reader img']`.
