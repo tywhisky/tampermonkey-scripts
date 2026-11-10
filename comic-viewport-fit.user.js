@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comic Viewport Fit
 // @namespace    comic-viewport-fit
-// @version      0.3.0
+// @version      0.3.1
 // @description  Fit comic images to the browser viewport while preserving their aspect ratio. Enable it per site.
 // @match        *://*/*
 // @run-at       document-end
@@ -10,6 +10,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (() => {
@@ -43,6 +44,13 @@
 
   function centerOnImageLoad(event) {
     if (event.target.id === 'mangaFile') scheduleCenter();
+  }
+
+  function centerOnPageChange() {
+    if (!/^#p=\d+$/.test(location.hash)) return;
+    // Manhuagui queues a scroll-to-top animation when it changes pages.
+    unsafeWindow.jQuery?.('html, body').stop(true);
+    scheduleCenter();
   }
 
   const layoutObserver = mangaBox ? new ResizeObserver(() => {
@@ -80,6 +88,7 @@
       centerMangaBox();
       layoutObserver.observe(document.body);
       mangaBox.addEventListener('load', centerOnImageLoad, true);
+      window.addEventListener('hashchange', centerOnPageChange);
       window.addEventListener('pageshow', scheduleCenter);
       window.addEventListener('resize', scheduleCenter);
     }
@@ -110,6 +119,7 @@
       if (mangaBox) {
         layoutObserver.disconnect();
         mangaBox.removeEventListener('load', centerOnImageLoad, true);
+        window.removeEventListener('hashchange', centerOnPageChange);
         window.removeEventListener('pageshow', scheduleCenter);
         window.removeEventListener('resize', scheduleCenter);
         cancelAnimationFrame(resizeFrame);
